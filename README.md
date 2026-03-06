@@ -3,7 +3,6 @@
 
 ![Python](https://img.shields.io/badge/Python-3.x-blue)
 ![Project](https://img.shields.io/badge/Project-Hackathon-orange)
-![Domain](https://img.shields.io/badge/Domain-Automotive%20Telemetry-green)
 ![License](https://img.shields.io/badge/License-MIT-lightgrey)
 
 ---
