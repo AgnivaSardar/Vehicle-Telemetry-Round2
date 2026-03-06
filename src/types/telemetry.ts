@@ -6,7 +6,7 @@ export interface TelemetryData {
   battery: number;
   energy: number;
   location: string;
-  timestamp: string;
+  recordedAt: string;
 }
 
 export interface TelemetryStats {

@@ -249,9 +249,14 @@ export default function AddTelemetry() {
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 px-6 rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 transition-all transform hover:scale-[1.02] shadow-lg"
+              disabled={isLoading}
+              className={`w-full py-3 px-6 rounded-lg font-semibold transition-all transform ${
+                isLoading
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 hover:scale-[1.02] shadow-lg'
+              }`}
             >
-              Save Telemetry Data
+              {isLoading ? 'Saving...' : 'Save Telemetry Data'}
             </button>
           </form>
         </div>
