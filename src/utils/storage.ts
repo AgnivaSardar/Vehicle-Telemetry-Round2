@@ -17,19 +17,26 @@ export const storageUtils = {
   // Add new telemetry entry
   addTelemetry: (telemetry: Omit<TelemetryData, 'id'>): TelemetryData => {
     const allData = storageUtils.getAllTelemetry();
+
     const newEntry: TelemetryData = {
       ...telemetry,
-      id: `entry-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+
+      // FIX: numeric id instead of string
+      id: Date.now() + Math.floor(Math.random() * 100000),
     };
+
     allData.push(newEntry);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(allData));
+
     return newEntry;
   },
 
   // Delete telemetry entry by id
-  deleteTelemetry: (id: string): void => {
+  deleteTelemetry: (id: number): void => {
     const allData = storageUtils.getAllTelemetry();
+
     const filtered = allData.filter((entry) => entry.id !== id);
+
     localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
   },
 
@@ -41,7 +48,8 @@ export const storageUtils = {
   // Get telemetry by vehicle ID
   getTelemetryByVehicleId: (vehicleId: string): TelemetryData[] => {
     const allData = storageUtils.getAllTelemetry();
-    return allData.filter((entry) => 
+
+    return allData.filter((entry) =>
       entry.vehicleId.toLowerCase().includes(vehicleId.toLowerCase())
     );
   },
