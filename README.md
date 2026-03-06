@@ -210,7 +210,6 @@ Possible integrations:
 
 # 🔮 Future Improvements
 
-- 📊 Real-time telemetry visualization dashboard  
 - ☁️ Cloud-based telemetry storage  
 - 🧠 Machine learning anomaly detection  
 - 🗺 GPS route visualization  
