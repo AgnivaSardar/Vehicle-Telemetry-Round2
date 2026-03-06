@@ -15,33 +15,21 @@ export default function ViewTelemetry() {
   const [telemetryData, setTelemetryData] = useState<TelemetryData[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
 
   useEffect(() => {
     loadData();
 
-    const interval = setInterval(() => loadData(true), 5000);
+    const interval = setInterval(loadData, 5000);
     return () => clearInterval(interval);
   }, []);
 
-  const loadData = async (silent = false) => {
+  const loadData = async () => {
     try {
-      if (!silent) setIsLoading(true);
-
-      setError("");
-
       const response = await apiService.getTelemetry();
       setTelemetryData(response.telemetry || []);
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to load telemetry data"
-      );
+      console.error("Failed to load telemetry", err);
       setTelemetryData([]);
-    } finally {
-      if (!silent) setIsLoading(false);
     }
   };
 
@@ -101,10 +89,6 @@ export default function ViewTelemetry() {
 
     return filtered;
   }, [telemetryData, searchQuery, sortOrder]);
-
-  const handleRefresh = async () => {
-    await loadData();
-  };
 
   const formatDateTime = (timestamp: string | undefined) => {
     if (!timestamp) return "N/A";
