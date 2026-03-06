@@ -1,7 +1,7 @@
 import { useState, } from 'react';
 import type {FormEvent} from 'react';
-import { storageUtils } from '../utils/storage';
-import { Car, Gauge, Thermometer, Battery, Zap, MapPin, CheckCircle } from 'lucide-react';
+import { apiService } from '../services/api';
+import { Car, Gauge, Thermometer, Battery, Zap, MapPin, CheckCircle, AlertCircle } from 'lucide-react';
 
 export default function AddTelemetry() {
   const [formData, setFormData] = useState({
@@ -15,6 +15,9 @@ export default function AddTelemetry() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showError, setShowError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -47,38 +50,48 @@ export default function AddTelemetry() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
     if (!validateForm()) {
       return;
     }
 
-    // Save to localStorage
-    storageUtils.addTelemetry({
-      vehicleId: formData.vehicleId.trim(),
-      speed: Number(formData.speed),
-      temperature: Number(formData.temperature),
-      battery: Number(formData.battery),
-      energy: Number(formData.energy),
-      location: formData.location.trim(),
-      timestamp: new Date().toISOString(),
-    });
+    setIsLoading(true);
+    setShowError(false);
 
-    // Show success message
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
+    try {
+      // Send to API
+      await apiService.ingestTelemetry({
+        vehicleId: formData.vehicleId.trim(),
+        speed: Number(formData.speed),
+        temperature: Number(formData.temperature),
+        battery: Number(formData.battery),
+        energy: Number(formData.energy),
+        location: formData.location.trim(),
+      });
 
-    // Clear form
-    setFormData({
-      vehicleId: '',
-      speed: '',
-      temperature: '',
-      battery: '',
-      energy: '',
-      location: '',
-    });
-    setErrors({});
+      // Show success message
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+
+      // Clear form
+      setFormData({
+        vehicleId: '',
+        speed: '',
+        temperature: '',
+        battery: '',
+        energy: '',
+        location: '',
+      });
+      setErrors({});
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Failed to save telemetry data');
+      setShowError(true);
+      setTimeout(() => setShowError(false), 5000);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleChange = (field: string, value: string) => {
@@ -97,6 +110,14 @@ export default function AddTelemetry() {
           <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4 flex items-center space-x-3 animate-fade-in">
             <CheckCircle className="w-6 h-6 text-green-600" />
             <p className="text-green-800 font-medium">Telemetry data saved successfully!</p>
+          </div>
+        )}
+
+        {/* Error Message */}
+        {showError && (
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-3 animate-fade-in">
+            <AlertCircle className="w-6 h-6 text-red-600" />
+            <p className="text-red-800 font-medium">{errorMessage}</p>
           </div>
         )}
 
