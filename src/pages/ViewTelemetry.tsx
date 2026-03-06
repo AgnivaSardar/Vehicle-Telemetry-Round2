@@ -26,19 +26,37 @@ export default function ViewTelemetry() {
     try {
       const response = await apiService.getTelemetry();
 
-      const normalized = (response.telemetry || []).map((t: any) => ({
+      const normalized: TelemetryData[] = (response.telemetry || []).map((t: any) => ({
         id: t.id,
         vehicleId: t.vehicleId,
 
-        // convert backend metrics → UI metrics
-        speed: t.engineRpm ? t.engineRpm / 100 : 0,
-        temperature: t.coolantTemp ?? t.lubOilTemp ?? 0,
-        battery: t.batteryVoltage ?? 0,
-        energy: t.fuelPressure ?? 0,
+        // derive UI metrics from full telemetry schema
+        speed: Number((t.engineRpm ?? t.rpm ?? 0) / 100),
+        temperature: Number(t.coolantTemp ?? t.engineTemp ?? t.lubOilTemp ?? 0),
+        battery: Number(t.batteryVoltage ?? 0),
+        energy: Number(t.fuelPressure ?? 0),
 
         location: t.rawPayload?.location ?? "N/A",
-        timestamp: t.recordedAt,
+
         recordedAt: t.recordedAt,
+
+        // keep full raw metrics available internally
+        engineRpm: t.engineRpm,
+        lubOilPressure: t.lubOilPressure,
+        fuelPressure: t.fuelPressure,
+        coolantPressure: t.coolantPressure,
+        lubOilTemp: t.lubOilTemp,
+        coolantTemp: t.coolantTemp,
+        engineTemp: t.engineTemp,
+        rpm: t.rpm,
+        batteryVoltage: t.batteryVoltage,
+        oilPressure: t.oilPressure,
+        mileage: t.mileage,
+        vibrationLevel: t.vibrationLevel,
+        fuelEfficiency: t.fuelEfficiency,
+        errorCodesCount: t.errorCodesCount,
+        coolantLevel: t.coolantLevel,
+        ambientTemperature: t.ambientTemperature,
       }));
 
       setTelemetryData(normalized);
@@ -189,7 +207,7 @@ export default function ViewTelemetry() {
                   Avg Battery
                 </p>
                 <p className="text-3xl font-bold text-gray-800 mt-1">
-                  {stats.averageBattery} %
+                  {stats.averageBattery}
                 </p>
               </div>
 
@@ -276,19 +294,19 @@ export default function ViewTelemetry() {
                       </td>
 
                       <td className="px-6 py-4">
-                        {entry.speed.toFixed(1)} km/h
+                        {entry.speed?.toFixed(1)} km/h
                       </td>
 
                       <td className="px-6 py-4">
-                        {entry.temperature.toFixed(1)} °C
+                        {entry.temperature?.toFixed(1)} °C
                       </td>
 
                       <td className="px-6 py-4">
-                        {entry.battery} %
+                        {entry.battery}
                       </td>
 
                       <td className="px-6 py-4">
-                        {entry.energy} kWh
+                        {entry.energy}
                       </td>
 
                       <td className="px-6 py-4">

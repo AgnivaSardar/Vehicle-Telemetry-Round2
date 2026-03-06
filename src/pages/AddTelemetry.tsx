@@ -1,299 +1,283 @@
-import { useState } from "react";
-import type { FormEvent } from "react";
-import { apiService } from "../services/api";
+import { useState } from "react"
+import type { FormEvent } from "react"
+import { apiService } from "../services/api"
 import {
   Car,
   Gauge,
   Thermometer,
   Battery,
-  Zap,
-  MapPin,
   CheckCircle,
-  AlertCircle,
-} from "lucide-react";
+  AlertCircle
+} from "lucide-react"
 
 export default function AddTelemetry() {
+
   const [formData, setFormData] = useState({
     vehicleId: "",
-    speed: "",
-    temperature: "",
-    battery: "",
-    energy: "",
-    location: "",
-  });
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [showError, setShowError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+    engine_rpm: "",
+    rpm: "",
 
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
+    lub_oil_pressure: "",
+    oil_pressure: "",
 
-    if (!formData.vehicleId.trim()) {
-      newErrors.vehicleId = "Vehicle ID is required";
+    fuel_pressure: "",
+    coolant_pressure: "",
+
+    lub_oil_temp: "",
+    coolant_temp: "",
+    engine_temp: "",
+
+    battery_voltage: "",
+
+    mileage: "",
+    vibration_level: "",
+    fuel_efficiency: "",
+
+    coolant_level: "",
+    ambient_temperature: "",
+
+    error_codes_count: ""
+  })
+
+  const [errors, setErrors] = useState<Record<string,string>>({})
+  const [showSuccess,setShowSuccess] = useState(false)
+  const [showError,setShowError] = useState(false)
+  const [errorMessage,setErrorMessage] = useState("")
+  const [isLoading,setIsLoading] = useState(false)
+
+
+  const validateForm = () => {
+
+    const newErrors:Record<string,string> = {}
+
+    if(!formData.vehicleId.trim()){
+      newErrors.vehicleId = "Vehicle ID required"
     }
 
-    const speed = Number(formData.speed);
-    const temp = Number(formData.temperature);
-    const battery = Number(formData.battery);
-    const energy = Number(formData.energy);
+    setErrors(newErrors)
 
-    if (isNaN(speed) || speed < 0) {
-      newErrors.speed = "Valid speed is required";
-    }
+    return Object.keys(newErrors).length === 0
+  }
 
-    if (isNaN(temp) || temp < -50 || temp > 200) {
-      newErrors.temperature = "Temperature must be between -50°C and 200°C";
-    }
 
-    if (isNaN(battery) || battery < 0 || battery > 100) {
-      newErrors.battery = "Battery must be between 0% and 100%";
-    }
+  const handleSubmit = async (e:FormEvent) => {
 
-    if (isNaN(energy) || energy < 0) {
-      newErrors.energy = "Valid energy consumption is required";
-    }
+    e.preventDefault()
 
-    if (!formData.location.trim()) {
-      newErrors.location = "Location is required";
-    }
+    if(!validateForm()) return
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+    setIsLoading(true)
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+    try{
 
-    if (!validateForm()) return;
+      const payload:any = {
+        vehicleId: formData.vehicleId.trim()
+      }
 
-    setIsLoading(true);
-    setShowError(false);
+      Object.entries(formData).forEach(([k,v])=>{
+        if(k==="vehicleId") return
 
-    try {
-      await apiService.ingestTelemetry({
-        vehicleId: formData.vehicleId.trim(),
-        speed: Number(formData.speed),
-        temperature: Number(formData.temperature),
-        battery: Number(formData.battery),
-        energy: Number(formData.energy),
-        location: formData.location.trim(),
-      });
+        if(v!=="" && !isNaN(Number(v))){
+          payload[k] = Number(v)
+        }
+      })
 
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
+      await apiService.ingestTelemetry(payload)
+
+      setShowSuccess(true)
+      setTimeout(()=>setShowSuccess(false),3000)
 
       setFormData({
-        vehicleId: "",
-        speed: "",
-        temperature: "",
-        battery: "",
-        energy: "",
-        location: "",
-      });
+        vehicleId:"",
+        engine_rpm:"",
+        rpm:"",
+        lub_oil_pressure:"",
+        oil_pressure:"",
+        fuel_pressure:"",
+        coolant_pressure:"",
+        lub_oil_temp:"",
+        coolant_temp:"",
+        engine_temp:"",
+        battery_voltage:"",
+        mileage:"",
+        vibration_level:"",
+        fuel_efficiency:"",
+        coolant_level:"",
+        ambient_temperature:"",
+        error_codes_count:""
+      })
 
-      setErrors({});
-    } catch (error) {
+    }
+    catch(error){
+
       setErrorMessage(
         error instanceof Error
-          ? error.message
-          : "Failed to save telemetry data"
-      );
-      setShowError(true);
-      setTimeout(() => setShowError(false), 5000);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        ? error.message
+        : "Failed to save telemetry"
+      )
 
-  const handleChange = (field: string, value: string) => {
-    setFormData((prev) => ({
+      setShowError(true)
+
+    }
+    finally{
+      setIsLoading(false)
+    }
+
+  }
+
+
+  const handleChange = (field:string,value:string)=>{
+
+    setFormData(prev=>({
       ...prev,
-      [field]: value,
-    }));
+      [field]:value
+    }))
 
-    if (errors[field]) {
-      setErrors((prev) => ({
-        ...prev,
-        [field]: "",
-      }));
-    }
-  };
+  }
+
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4">
-      <div className="container mx-auto max-w-3xl">
 
-        {/* Success Message */}
+  <div className="min-h-[calc(100vh-4rem)] bg-gray-50 py-8 px-4">
 
-        {showSuccess && (
-          <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4 flex items-center space-x-3">
-            <CheckCircle className="w-6 h-6 text-green-600" />
-            <p className="text-green-800 font-medium">
-              Telemetry data saved successfully!
-            </p>
-          </div>
-        )}
+  <div className="container mx-auto max-w-3xl">
 
-        {/* Error Message */}
 
-        {showError && (
-          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-3">
-            <AlertCircle className="w-6 h-6 text-red-600" />
-            <p className="text-red-800 font-medium">{errorMessage}</p>
-          </div>
-        )}
+  {showSuccess && (
+  <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4 flex items-center space-x-3">
+  <CheckCircle className="text-green-600"/>
+  <p className="text-green-800 font-medium">Telemetry saved</p>
+  </div>
+  )}
 
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+  {showError && (
+  <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-3">
+  <AlertCircle className="text-red-600"/>
+  <p className="text-red-800 font-medium">{errorMessage}</p>
+  </div>
+  )}
 
-          <div className="flex items-center space-x-3 mb-6">
-            <div className="bg-blue-100 p-3 rounded-lg">
-              <Car className="w-8 h-8 text-blue-600" />
-            </div>
 
-            <div>
-              <h1 className="text-3xl font-bold text-gray-800">
-                Add Telemetry Data
-              </h1>
-              <p className="text-gray-600">
-                Enter vehicle operational metrics
-              </p>
-            </div>
-          </div>
+  <div className="bg-white rounded-2xl shadow-xl p-8">
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+  <div className="flex items-center space-x-3 mb-6">
+  <div className="bg-blue-100 p-3 rounded-lg">
+  <Car className="text-blue-600"/>
+  </div>
+  <div>
+  <h1 className="text-3xl font-bold text-gray-800">
+  Add Telemetry
+  </h1>
+  </div>
+  </div>
 
-            {/* Vehicle ID */}
 
-            <InputField
-              icon={<Car size={16} />}
-              label="Vehicle ID"
-              value={formData.vehicleId}
-              onChange={(v) => handleChange("vehicleId", v)}
-              error={errors.vehicleId}
-              placeholder="e.g., VEH-102"
-            />
+  <form onSubmit={handleSubmit} className="space-y-4">
 
-            {/* Speed */}
+  <InputField
+  label="Vehicle ID"
+  value={formData.vehicleId}
+  onChange={(v)=>handleChange("vehicleId",v)}
+  error={errors.vehicleId}
+  icon={<Car size={16}/>}
+  />
 
-            <InputField
-              icon={<Gauge size={16} />}
-              label="Speed (km/h)"
-              value={formData.speed}
-              type="number"
-              onChange={(v) => handleChange("speed", v)}
-              error={errors.speed}
-              placeholder="e.g., 72"
-            />
 
-            {/* Temperature */}
+  <InputField label="Engine RPM" value={formData.engine_rpm} type="number" onChange={(v)=>handleChange("engine_rpm",v)} icon={<Gauge size={16}/>}/>
+  <InputField label="RPM" value={formData.rpm} type="number" onChange={(v)=>handleChange("rpm",v)}/>
 
-            <InputField
-              icon={<Thermometer size={16} />}
-              label="Engine Temperature (°C)"
-              value={formData.temperature}
-              type="number"
-              onChange={(v) => handleChange("temperature", v)}
-              error={errors.temperature}
-              placeholder="e.g., 88"
-            />
+  <InputField label="Lube Oil Pressure" value={formData.lub_oil_pressure} type="number" onChange={(v)=>handleChange("lub_oil_pressure",v)}/>
+  <InputField label="Oil Pressure" value={formData.oil_pressure} type="number" onChange={(v)=>handleChange("oil_pressure",v)}/>
 
-            {/* Battery */}
+  <InputField label="Fuel Pressure" value={formData.fuel_pressure} type="number" onChange={(v)=>handleChange("fuel_pressure",v)}/>
+  <InputField label="Coolant Pressure" value={formData.coolant_pressure} type="number" onChange={(v)=>handleChange("coolant_pressure",v)}/>
 
-            <InputField
-              icon={<Battery size={16} />}
-              label="Battery Level (%)"
-              value={formData.battery}
-              type="number"
-              onChange={(v) => handleChange("battery", v)}
-              error={errors.battery}
-              placeholder="e.g., 67"
-            />
+  <InputField label="Lube Oil Temp" value={formData.lub_oil_temp} type="number" onChange={(v)=>handleChange("lub_oil_temp",v)} icon={<Thermometer size={16}/>}/>
+  <InputField label="Coolant Temp" value={formData.coolant_temp} type="number" onChange={(v)=>handleChange("coolant_temp",v)}/>
+  <InputField label="Engine Temp" value={formData.engine_temp} type="number" onChange={(v)=>handleChange("engine_temp",v)}/>
 
-            {/* Energy */}
+  <InputField label="Battery Voltage" value={formData.battery_voltage} type="number" onChange={(v)=>handleChange("battery_voltage",v)} icon={<Battery size={16}/>}/>
 
-            <InputField
-              icon={<Zap size={16} />}
-              label="Energy Consumption (kWh)"
-              value={formData.energy}
-              type="number"
-              onChange={(v) => handleChange("energy", v)}
-              error={errors.energy}
-              placeholder="e.g., 4.3"
-            />
+  <InputField label="Mileage" value={formData.mileage} type="number" onChange={(v)=>handleChange("mileage",v)}/>
+  <InputField label="Vibration Level" value={formData.vibration_level} type="number" onChange={(v)=>handleChange("vibration_level",v)}/>
+  <InputField label="Fuel Efficiency" value={formData.fuel_efficiency} type="number" onChange={(v)=>handleChange("fuel_efficiency",v)}/>
 
-            {/* Location */}
+  <InputField label="Coolant Level" value={formData.coolant_level} type="number" onChange={(v)=>handleChange("coolant_level",v)}/>
+  <InputField label="Ambient Temperature" value={formData.ambient_temperature} type="number" onChange={(v)=>handleChange("ambient_temperature",v)}/>
 
-            <InputField
-              icon={<MapPin size={16} />}
-              label="Location"
-              value={formData.location}
-              onChange={(v) => handleChange("location", v)}
-              error={errors.location}
-              placeholder="e.g., Chennai"
-            />
+  <InputField label="Error Codes Count" value={formData.error_codes_count} type="number" onChange={(v)=>handleChange("error_codes_count",v)}/>
 
-            {/* Submit */}
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className={`w-full py-3 px-6 rounded-lg font-semibold transition ${
-                isLoading
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-blue-600 text-white hover:bg-blue-700"
-              }`}
-            >
-              {isLoading ? "Saving..." : "Save Telemetry Data"}
-            </button>
+  <button
+  type="submit"
+  disabled={isLoading}
+  className={`w-full py-3 rounded-lg font-semibold ${
+  isLoading
+  ? "bg-gray-400"
+  : "bg-blue-600 text-white hover:bg-blue-700"
+  }`}
+  >
+  {isLoading ? "Saving..." : "Save Telemetry"}
+  </button>
 
-          </form>
-        </div>
-      </div>
-    </div>
-  );
+  </form>
+
+  </div>
+
+  </div>
+  </div>
+  )
+
 }
 
-/* Reusable Input Component */
+
+
 type InputFieldProps = {
-  label: string
-  value: string
-  onChange: (value: string) => void
-  error?: string
-  placeholder?: string
-  icon?: React.ReactNode
-  type?: string
+label:string
+value:string
+onChange:(v:string)=>void
+error?:string
+placeholder?:string
+icon?:React.ReactNode
+type?:string
 }
 
 function InputField({
-  label,
-  value,
-  onChange,
-  error,
-  placeholder,
-  icon,
-  type = "text",
-}: InputFieldProps) {
-  return (
-    <div>
-      <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700 mb-2">
-        {icon}
-        <span>{label}</span>
-      </label>
+label,
+value,
+onChange,
+error,
+placeholder,
+icon,
+type="text"
+}:InputFieldProps){
 
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
-          error ? "border-red-500" : "border-gray-300"
-        }`}
-      />
+return(
 
-      {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
-    </div>
-  );
+<div>
+
+<label className="flex items-center space-x-2 text-sm font-semibold text-gray-700 mb-2">
+{icon}
+<span>{label}</span>
+</label>
+
+<input
+type={type}
+value={value}
+onChange={(e)=>onChange(e.target.value)}
+placeholder={placeholder}
+className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+error ? "border-red-500" : "border-gray-300"
+}`}
+ />
+
+{error && (
+<p className="text-red-500 text-sm mt-1">{error}</p>
+)}
+
+</div>
+
+)
+
 }
