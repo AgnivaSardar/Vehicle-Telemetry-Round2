@@ -30,17 +30,13 @@ export default function ViewTelemetry() {
         id: t.id,
         vehicleId: t.vehicleId,
 
-        // derive UI metrics from full telemetry schema
         speed: Number((t.engineRpm ?? t.rpm ?? 0) / 100),
         temperature: Number(t.coolantTemp ?? t.engineTemp ?? t.lubOilTemp ?? 0),
         battery: Number(t.batteryVoltage ?? 0),
         energy: Number(t.fuelPressure ?? 0),
 
-        location: t.rawPayload?.location ?? "N/A",
-
         recordedAt: t.recordedAt,
 
-        // keep full raw metrics available internally
         engineRpm: t.engineRpm,
         lubOilPressure: t.lubOilPressure,
         fuelPressure: t.fuelPressure,
@@ -65,6 +61,20 @@ export default function ViewTelemetry() {
       setTelemetryData([]);
     }
   };
+
+  /* ---------- LATEST RECORD ---------- */
+
+  const latestTelemetry = useMemo(() => {
+    if (telemetryData.length === 0) return null;
+
+    return [...telemetryData].sort(
+      (a, b) =>
+        new Date(b.recordedAt).getTime() -
+        new Date(a.recordedAt).getTime()
+    )[0];
+  }, [telemetryData]);
+
+  /* ---------- STATS ---------- */
 
   const stats = useMemo((): TelemetryStats => {
     if (telemetryData.length === 0) {
@@ -99,6 +109,8 @@ export default function ViewTelemetry() {
       averageBattery: Number(avgBattery.toFixed(1)),
     };
   }, [telemetryData]);
+
+  /* ---------- FILTERING ---------- */
 
   const filteredAndSortedData = useMemo(() => {
     let filtered = telemetryData;
@@ -145,87 +157,81 @@ export default function ViewTelemetry() {
           Telemetry Dashboard
         </h1>
 
-        {/* Stats Cards */}
+        {/* ----------- LATEST TELEMETRY DASHBOARD ----------- */}
+
+        {latestTelemetry && (
+          <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+
+            <h2 className="text-xl font-bold mb-4">
+              Latest Telemetry ({latestTelemetry.vehicleId})
+            </h2>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 text-sm">
+
+              <Metric label="Engine RPM" value={latestTelemetry.engineRpm} />
+              <Metric label="Engine Temp" value={latestTelemetry.engineTemp} />
+              <Metric label="Coolant Temp" value={latestTelemetry.coolantTemp} />
+              <Metric label="Oil Temp" value={latestTelemetry.lubOilTemp} />
+              <Metric label="Oil Pressure" value={latestTelemetry.lubOilPressure} />
+              <Metric label="Fuel Pressure" value={latestTelemetry.fuelPressure} />
+
+              <Metric label="Battery Voltage" value={latestTelemetry.batteryVoltage} />
+              <Metric label="Mileage" value={latestTelemetry.mileage} />
+              <Metric label="Vibration" value={latestTelemetry.vibrationLevel} />
+              <Metric label="Fuel Efficiency" value={latestTelemetry.fuelEfficiency} />
+              <Metric label="Coolant Level" value={latestTelemetry.coolantLevel} />
+              <Metric label="Ambient Temp" value={latestTelemetry.ambientTemperature} />
+
+              <Metric label="Error Codes" value={latestTelemetry.errorCodesCount} />
+              <Metric label="Recorded At" value={formatDateTime(latestTelemetry.recordedAt)} />
+
+            </div>
+          </div>
+        )}
+
+        {/* ---------- EXISTING STATS (UNCHANGED) ---------- */}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
 
-          <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm font-medium">
-                  Total Vehicles
-                </p>
-                <p className="text-3xl font-bold text-gray-800 mt-1">
-                  {stats.totalVehicles}
-                </p>
-              </div>
+          <StatCard
+            title="Total Vehicles"
+            value={stats.totalVehicles}
+            icon={<Car className="w-8 h-8 text-blue-600" />}
+            color="blue"
+          />
 
-              <div className="bg-blue-100 p-3 rounded-lg">
-                <Car className="w-8 h-8 text-blue-600" />
-              </div>
-            </div>
-          </div>
+          <StatCard
+            title="Avg Speed"
+            value={`${stats.averageSpeed} km/h`}
+            icon={<Gauge className="w-8 h-8 text-green-600" />}
+            color="green"
+          />
 
-          <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm font-medium">
-                  Avg Speed
-                </p>
-                <p className="text-3xl font-bold text-gray-800 mt-1">
-                  {stats.averageSpeed} km/h
-                </p>
-              </div>
+          <StatCard
+            title="Avg Temperature"
+            value={`${stats.averageTemperature} °C`}
+            icon={<Thermometer className="w-8 h-8 text-orange-600" />}
+            color="orange"
+          />
 
-              <div className="bg-green-100 p-3 rounded-lg">
-                <Gauge className="w-8 h-8 text-green-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-orange-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm font-medium">
-                  Avg Temperature
-                </p>
-                <p className="text-3xl font-bold text-gray-800 mt-1">
-                  {stats.averageTemperature} °C
-                </p>
-              </div>
-
-              <div className="bg-orange-100 p-3 rounded-lg">
-                <Thermometer className="w-8 h-8 text-orange-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm font-medium">
-                  Avg Battery
-                </p>
-                <p className="text-3xl font-bold text-gray-800 mt-1">
-                  {stats.averageBattery}
-                </p>
-              </div>
-
-              <div className="bg-purple-100 p-3 rounded-lg">
-                <Battery className="w-8 h-8 text-purple-600" />
-              </div>
-            </div>
-          </div>
+          <StatCard
+            title="Avg Battery"
+            value={stats.averageBattery}
+            icon={<Battery className="w-8 h-8 text-purple-600" />}
+            color="purple"
+          />
 
         </div>
 
-        {/* Controls */}
+        {/* ---------- SEARCH ---------- */}
 
         <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
 
             <div className="relative flex-1 md:max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"/>
+
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5"/>
 
               <input
                 type="text"
@@ -234,6 +240,7 @@ export default function ViewTelemetry() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               />
+
             </div>
 
             <button
@@ -249,7 +256,7 @@ export default function ViewTelemetry() {
           </div>
         </div>
 
-        {/* Table */}
+        {/* ---------- TABLE (UNCHANGED) ---------- */}
 
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
 
@@ -280,7 +287,6 @@ export default function ViewTelemetry() {
                     <th className="px-6 py-4 text-left text-xs font-semibold">Temperature</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold">Battery</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold">Energy</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold">Location</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold">Timestamp</th>
                   </tr>
                 </thead>
@@ -309,10 +315,6 @@ export default function ViewTelemetry() {
                         {entry.energy}
                       </td>
 
-                      <td className="px-6 py-4">
-                        {entry.location}
-                      </td>
-
                       <td className="px-6 py-4 text-sm text-gray-600">
                         {formatDateTime(entry.recordedAt)}
                       </td>
@@ -327,12 +329,43 @@ export default function ViewTelemetry() {
           )}
         </div>
 
-        {filteredAndSortedData.length > 0 && (
-          <div className="mt-4 text-center text-sm text-gray-600">
-            Showing {filteredAndSortedData.length} of {telemetryData.length} entries
-          </div>
-        )}
+      </div>
+    </div>
+  );
+}
 
+/* ---------- SMALL COMPONENTS ---------- */
+
+function Metric({ label, value }: { label: string; value: any }) {
+  return (
+    <div className="bg-gray-50 p-3 rounded-lg">
+      <p className="text-xs text-gray-500">{label}</p>
+      <p className="font-semibold">{value ?? "N/A"}</p>
+    </div>
+  );
+}
+
+function StatCard({
+  title,
+  value,
+  icon,
+  color,
+}: any) {
+  const colors: any = {
+    blue: "border-blue-500 bg-blue-100",
+    green: "border-green-500 bg-green-100",
+    orange: "border-orange-500 bg-orange-100",
+    purple: "border-purple-500 bg-purple-100",
+  };
+
+  return (
+    <div className={`bg-white rounded-xl shadow-lg p-6 border-l-4 ${colors[color]}`}>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-gray-600 text-sm font-medium">{title}</p>
+          <p className="text-3xl font-bold text-gray-800 mt-1">{value}</p>
+        </div>
+        <div className="p-3 rounded-lg">{icon}</div>
       </div>
     </div>
   );

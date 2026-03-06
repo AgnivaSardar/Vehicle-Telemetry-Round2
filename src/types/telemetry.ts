@@ -7,7 +7,6 @@ export interface TelemetryData {
   temperature: number;
   battery: number;
   energy: number;
-  location: string;
 
   recordedAt: string;
 
